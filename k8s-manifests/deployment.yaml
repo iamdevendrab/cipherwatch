@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cipherwatch-app
+  namespace: application
+  labels:
+    app: cipherwatch-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cipherwatch-app
+  template:
+    metadata:
+      labels:
+        app: cipherwatch-app
+    spec:
+      containers:
+        - name: cipherwatch-app
+          image: iamddb/cipherwatch-app:latest
+          ports:
+            - containerPort: 5000
