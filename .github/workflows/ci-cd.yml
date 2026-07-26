@@ -1,0 +1,57 @@
+name: CipherWatch CI/CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: ./app
+          format: table
+          exit-code: '0'
+
+      - name: Semgrep scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: p/ci
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Notify Discord
+        if: always()
+        run: |
+          curl -H "Content-Type: application/json" -X POST \
+            -d "{\"content\": \"Security scan finished for ${{ github.sha }} — status: ${{ job.status }}\"}" \
+            ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+  build-and-push:
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/cipherwatch-app:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/cipherwatch-app:latest
