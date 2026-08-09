@@ -14,7 +14,15 @@ spec:
     metadata:
       labels:
         app: cipherwatch-app
+      annotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "53"
+        sidecar.istio.io/inject: "true"
     spec:
+      hostAliases:
+        - ip: "10.43.201.182"
+          hostnames:
+            - "istiod.istio-system.svc"
+            - "istiod.istio-system.svc.cluster.local"
       containers:
         - name: cipherwatch-app
           image: iamddb/cipherwatch-app:latest
