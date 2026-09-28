@@ -23,13 +23,6 @@ jobs:
         with:
           config: p/ci
 
-      - name: SonarQube scan
-        uses: SonarSource/sonarqube-scan-action@v2
-        continue-on-error: true
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
       - name: Notify Discord
         if: always()
         run: |
